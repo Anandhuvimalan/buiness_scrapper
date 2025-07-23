@@ -49,7 +49,7 @@ def initialize_session_state():
 
 def main():
     st.set_page_config(
-        page_title="Business Scraper Pro",
+        page_title="LeadXBusiness",
         page_icon="🏢",
         layout="wide"
     )
@@ -63,24 +63,24 @@ def main():
     if st.session_state.scraping_manager:
         update_stats_from_manager()
     
-    st.title("🏢 Enhanced Local Business Scraper")
-    st.markdown("*Advanced business data scraper with parallel boundary processing, queue-based hexagon subdivision (BFS), rate limiting, and advanced website crawling*")
+    st.title("LeadXBusiness")
+    st.markdown("*Professional business data collection platform*")
     st.markdown("---")
     
     # Sidebar for configuration
     with st.sidebar:
-        st.header("⚙️ Configuration")
+        st.header("Configuration")
         
         # API Key Input
         api_key = st.text_input(
-            "🔑 Google Places API Key",
+            "Google Places API Key",
             type="password",
             help="Enter your Google Places API key",
             placeholder="AIza..."
         )
         
         # GeoJSON Upload
-        st.subheader("📍 Geographic Boundaries")
+        st.subheader("Geographic Boundaries")
         uploaded_file = st.file_uploader(
             "Upload GeoJSON file",
             type=['geojson', 'json'],
@@ -92,7 +92,7 @@ def main():
             try:
                 geojson_data = json.load(uploaded_file)
                 boundaries = load_boundaries_from_geojson_data(geojson_data)
-                st.success(f"✅ Loaded {len(boundaries)} boundaries")
+                st.success(f"Loaded {len(boundaries)} boundaries")
                 
                 # Show boundary names
                 with st.expander("View Boundaries"):
@@ -100,12 +100,12 @@ def main():
                         st.write(f"{i}: {boundary['name']}")
                         
             except Exception as e:
-                st.error(f"❌ Error loading GeoJSON: {str(e)}")
+                st.error(f"Error loading GeoJSON: {str(e)}")
         
         # Boundary Selection
         selected_boundaries = []
         if boundaries:
-            st.subheader("🎯 Select Boundaries")
+            st.subheader("Select Boundaries")
             
             # Select All checkbox
             select_all = st.checkbox("Select All Boundaries")
@@ -124,12 +124,12 @@ def main():
                 selected_boundaries = [boundaries[i] for i in selected_indices]
         
         # Search Parameters
-        st.subheader("🔍 Search Parameters")
+        st.subheader("Search Parameters")
         
         keywords_input = st.text_area(
             "Keywords (one per line)",
             placeholder="software companies\ntechnology\nstartups\nrestaurants",
-            help="Enter search keywords, one per line. Provide at least one keyword.",
+            help="Enter search keywords, one per line",
             height=100
         )
         keywords = [k.strip() for k in keywords_input.split('\n') if k.strip()]
@@ -137,11 +137,11 @@ def main():
         business_type = st.text_input(
             "Business Type (Optional)",
             placeholder="restaurant, store, etc.",
-            help="Optional: specify a business type from Google Places API types"
+            help="Specify a business type from Google Places API types"
         )
         
         # Column Selection
-        st.subheader("📊 Column Selection")
+        st.subheader("Column Selection")
         
         # Select All Columns checkbox
         select_all_columns = st.checkbox("Select All Columns")
@@ -151,27 +151,27 @@ def main():
             st.info(f"Selected all {len(COLUMNS)} columns")
         else:
             st.session_state.selected_columns = st.multiselect(
-                "Choose columns to include in CSV:",
+                "Choose columns to include:",
                 options=COLUMNS,
                 default=st.session_state.selected_columns,
-                help="Select the columns you want to include in your CSV downloads"
+                help="Select the columns you want to include in your data export"
             )
         
         st.info(f"Selected {len(st.session_state.selected_columns)} columns")
         
         # Technical Parameters
-        st.subheader("⚙️ Technical Settings")
+        st.subheader("Settings")
         
         target_results = st.number_input(
-            "🎯 Target businesses with emails",
+            "Target businesses with emails",
             min_value=1,
             max_value=10000,
             value=100,
-            help="Stop scraping after finding this many businesses with emails"
+            help="Stop collection after finding this many businesses with emails"
         )
         
         # H3 Resolution Selection
-        st.write("📐 H3 Resolution (Hexagon Size)")
+        st.write("Search Resolution")
         resolution_options = {}
         for res, info in H3_RESOLUTIONS.items():
             resolution_options[f"{res}: {info['name']} (~{info['avg_edge_length_km']:.1f}km edge)"] = res
@@ -180,20 +180,20 @@ def main():
             "Choose resolution:",
             list(resolution_options.keys()),
             index=list(resolution_options.values()).index(DEFAULT_H3_RESOLUTION),
-            help="Higher resolution = smaller hexagons = more detailed search"
+            help="Higher resolution = smaller search areas = more detailed results"
         )
         h3_resolution = resolution_options[selected_resolution_text]
         
         max_concurrency = st.slider(
-            "🚦 Max API Concurrency",
+            "API Concurrency",
             min_value=1,
             max_value=50,
             value=10,
-            help="Maximum concurrent API calls (be careful with rate limits)"
+            help="Maximum concurrent API calls"
         )
         
         max_links = st.slider(
-            "🔗 Max Links per Website",
+            "Max Links per Website",
             min_value=5,
             max_value=50,
             value=25,
@@ -201,16 +201,16 @@ def main():
         )
     
     # Main content area
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns([3, 1])
     
     with col1:
-        st.header("🚀 Scraping Control")
+        st.header("Data Collection")
         
         # Validation - Allow either keywords OR business_type OR both
         can_start = (
             api_key and 
             selected_boundaries and 
-            (keywords or business_type.strip()) and  # Either keywords or business_type is sufficient
+            (keywords or business_type.strip()) and
             st.session_state.selected_columns
         )
         
@@ -220,14 +220,14 @@ def main():
             if not selected_boundaries: missing.append("Boundaries")
             if not keywords and not business_type.strip(): missing.append("Keywords or Business Type")
             if not st.session_state.selected_columns: missing.append("Column Selection")
-            st.warning(f"⚠️ Missing: {', '.join(missing)}")
+            st.warning(f"Missing: {', '.join(missing)}")
         
         # Control buttons
         col_start, col_stop = st.columns(2)
         
         with col_start:
             if st.button(
-                "🚀 Start Scraping",
+                "Start Collection",
                 disabled=not can_start or st.session_state.scraping_active,
                 use_container_width=True,
                 type="primary"
@@ -239,7 +239,7 @@ def main():
         
         with col_stop:
             if st.button(
-                "⏹️ Stop Scraping",
+                "Stop Collection",
                 disabled=not st.session_state.scraping_active,
                 use_container_width=True,
                 type="secondary"
@@ -248,29 +248,29 @@ def main():
         
         # Status display
         if st.session_state.scraping_active:
-            st.success("🔄 Scraping in progress... (Auto-refreshing every 2 seconds)")
+            st.success("Collection in progress... (Auto-refreshing every 2 seconds)")
         elif st.session_state.csv_files['with_emails'] or st.session_state.csv_files['without_emails']:
             # Check if we have any data
             total_businesses = st.session_state.scraping_stats['places_processed']
             if total_businesses > 0:
-                st.info(f"✅ Scraping completed! Found {total_businesses} businesses total.")
+                st.info(f"Collection completed! Found {total_businesses} businesses total.")
             else:
-                st.warning("⏸️ Scraping stopped - No data collected yet")
+                st.warning("Collection stopped - No data collected yet")
         else:
-            st.info("🚀 Ready to start scraping")
+            st.info("Ready to start collection")
         
         # Progress metrics
         stats = st.session_state.scraping_stats
         col_metric1, col_metric2, col_metric3, col_metric4 = st.columns(4)
         
         with col_metric1:
-            st.metric("✅ With Emails", stats['businesses_with_email'])
+            st.metric("With Emails", stats['businesses_with_email'])
         with col_metric2:
-            st.metric("📄 Without Emails", stats['businesses_without_email'])
+            st.metric("Without Emails", stats['businesses_without_email'])
         with col_metric3:
-            st.metric("🔍 Total Processed", stats['places_processed'])
+            st.metric("Total Processed", stats['places_processed'])
         with col_metric4:
-            st.metric("📡 API Calls", stats['api_calls'])
+            st.metric("API Calls", stats['api_calls'])
         
         # Progress bar
         if target_results > 0:
@@ -279,39 +279,8 @@ def main():
             st.write(f"Progress: {stats['businesses_with_email']}/{target_results} businesses with emails")
     
     with col2:
-        st.header("📊 Results & Downloads")
+        st.header("Session Info")
         
-        # Download buttons
-        if st.session_state.csv_files['with_emails'] and os.path.exists(st.session_state.csv_files['with_emails']):
-            df_with_emails = load_csv_with_selected_columns(st.session_state.csv_files['with_emails'])
-            if not df_with_emails.empty:
-                csv_data = df_with_emails.to_csv(index=False)
-                st.download_button(
-                    f"📥 Download Businesses with Emails ({len(df_with_emails)})",
-                    csv_data,
-                    f"businesses_with_emails_{st.session_state.session_id}.csv",
-                    "text/csv",
-                    use_container_width=True,
-                    type="primary"
-                )
-        
-        if st.session_state.csv_files['without_emails'] and os.path.exists(st.session_state.csv_files['without_emails']):
-            df_without_emails = load_csv_with_selected_columns(st.session_state.csv_files['without_emails'])
-            if not df_without_emails.empty:
-                csv_data = df_without_emails.to_csv(index=False)
-                st.download_button(
-                    f"📥 Download Businesses without Emails ({len(df_without_emails)})",
-                    csv_data,
-                    f"businesses_without_emails_{st.session_state.session_id}.csv",
-                    "text/csv",
-                    use_container_width=True
-                )
-        
-        if not st.session_state.csv_files['with_emails'] and not st.session_state.csv_files['without_emails']:
-            st.info("No data to download yet")
-        
-        # Session info
-        st.subheader("📋 Session Info")
         st.write(f"**Session ID:** {st.session_state.session_id}")
         st.write(f"**Selected Boundaries:** {len(selected_boundaries)}")
         st.write(f"**Keywords:** {len(keywords)}")
@@ -320,15 +289,15 @@ def main():
             st.write("**Keywords:** " + ", ".join(keywords[:3]) + ("..." if len(keywords) > 3 else ""))
     
     # Real-time data view with auto-refresh
-    st.header("📋 Real-time CSV Preview")
+    st.header("Data Preview")
     current_time = time.strftime("%H:%M:%S")
     if st.session_state.scraping_active:
-        st.write(f"*🔄 Auto-refreshing every 2 seconds - Latest entries appear at the top | Current time: {current_time}*")
+        st.write(f"*Auto-refreshing every 2 seconds - Latest entries appear at the top | Current time: {current_time}*")
     else:
-        st.write(f"*📊 Data is read directly from CSV files on disk | Last refresh: {current_time}*")
+        st.write(f"*Data is read directly from files on disk | Last refresh: {current_time}*")
     
     # Tabs for different data views
-    tab1, tab2, tab3 = st.tabs(["🎯 With Emails", "📄 Without Emails", "📊 All Data"])
+    tab1, tab2, tab3 = st.tabs(["With Emails", "Without Emails", "All Data"])
     
     with tab1:
         display_real_time_csv_data('with_emails', "Businesses with emails")
@@ -348,7 +317,7 @@ def display_real_time_csv_data(csv_type, title):
         if not df.empty:
             display_dataframe_with_live_updates(df, title)
         else:
-            st.info(f"CSV file exists but no data yet...")
+            st.info(f"File exists but no data yet...")
     else:
         st.info(f"No {title.lower()} found yet...")
 
@@ -375,7 +344,7 @@ def display_combined_csv_data():
         df_all = df_all.sort_index(ascending=False)
         display_dataframe_with_live_updates(df_all, "All businesses")
     else:
-        st.info("No data collected yet. Start scraping to see results here.")
+        st.info("No data collected yet. Start collection to see results here.")
 
 def load_csv_with_selected_columns(csv_file_path):
     """Load CSV file and return only selected columns"""
@@ -398,7 +367,7 @@ def load_csv_with_selected_columns(csv_file_path):
             return df
             
     except Exception as e:
-        st.error(f"Error loading CSV: {e}")
+        st.error(f"Error loading data: {e}")
         return pd.DataFrame()
 
 def display_dataframe_with_live_updates(df, title):
@@ -425,9 +394,9 @@ def display_dataframe_with_live_updates(df, title):
         # Add a timestamp indicator
         current_time = time.strftime("%H:%M:%S")
         if len(df_display) > 0:
-            st.caption(f"🕒 Last updated: {current_time} | Showing latest 100 entries")
+            st.caption(f"Last updated: {current_time} | Showing latest 100 entries")
         else:
-            st.caption(f"🕒 Last checked: {current_time} | No data yet")
+            st.caption(f"Last checked: {current_time} | No data yet")
         
         st.dataframe(
             df_display,
@@ -436,11 +405,11 @@ def display_dataframe_with_live_updates(df, title):
         )
         
         # Show summary info
-        st.caption(f"📊 Total entries: {len(df)} | Displayed columns: {', '.join(df_display.columns[:5])}{'...' if len(df_display.columns) > 5 else ''}")
+        st.caption(f"Total entries: {len(df)} | Displayed columns: {', '.join(df_display.columns[:5])}{'...' if len(df_display.columns) > 5 else ''}")
         
         # Show latest entry details if available
         if len(df_display) > 0:
-            with st.expander("🔍 Latest Entry Details"):
+            with st.expander("Latest Entry Details"):
                 latest_entry = df_display.iloc[0]
                 for col, value in latest_entry.items():
                     if value and str(value) != 'nan':
@@ -547,20 +516,20 @@ def update_stats_from_manager():
                 st.session_state.scraping_manager.stop_flag.is_set()):
                 if st.session_state.scraping_active:  # Only show completion message once
                     st.session_state.scraping_active = False
-                    st.success("✅ Scraping completed! Target reached or stopped.")
+                    st.success("Collection completed! Target reached or stopped.")
                 
         except Exception as e:
             print(f"Error updating stats: {e}")
             if st.session_state.scraping_active:
                 st.session_state.scraping_active = False
-                st.error(f"❌ Scraping stopped due to error: {e}")
+                st.error(f"Collection stopped due to error: {e}")
 
 def stop_scraping():
     """Stop the scraping process"""
     st.session_state.scraping_active = False
     if st.session_state.scraping_manager:
         st.session_state.scraping_manager.stop_scraping()
-    st.success("🛑 Scraping stopped by user")
+    st.success("Collection stopped by user")
 
 if __name__ == "__main__":
     main()
