@@ -206,11 +206,11 @@ def main():
     with col1:
         st.header("🚀 Scraping Control")
         
-        # Validation
+        # Validation - Allow either keywords OR business_type OR both
         can_start = (
             api_key and 
             selected_boundaries and 
-            (keywords or business_type) and
+            (keywords or business_type.strip()) and  # Either keywords or business_type is sufficient
             st.session_state.selected_columns
         )
         
@@ -218,7 +218,7 @@ def main():
             missing = []
             if not api_key: missing.append("API Key")
             if not selected_boundaries: missing.append("Boundaries")
-            if not keywords and not business_type: missing.append("Keywords or Business Type")
+            if not keywords and not business_type.strip(): missing.append("Keywords or Business Type")
             if not st.session_state.selected_columns: missing.append("Column Selection")
             st.warning(f"⚠️ Missing: {', '.join(missing)}")
         
@@ -233,7 +233,7 @@ def main():
                 type="primary"
             ):
                 start_scraping(
-                    api_key, selected_boundaries, keywords, business_type,
+                    api_key, selected_boundaries, keywords if keywords else [""], business_type,
                     h3_resolution, target_results, max_concurrency, max_links
                 )
         
@@ -508,12 +508,15 @@ def start_scraping(api_key, boundaries, keywords, business_type, h3_resolution, 
             writer = csv.DictWriter(f, fieldnames=COLUMNS)
             writer.writeheader()
     
+    # Handle empty keywords - if no keywords provided, use empty list or single empty string
+    processed_keywords = keywords if keywords else [""]
+    
     # Create scraping manager
     scraping_manager = ScrapingManager(
         api_key=api_key,
         boundaries=boundaries,
-        keywords=keywords,
-        business_type=business_type,
+        keywords=processed_keywords,
+        business_type=business_type.strip() if business_type else "",
         h3_resolution=h3_resolution,
         target_results=target_results,
         max_concurrency=max_concurrency,

@@ -198,8 +198,15 @@ def get_nearby_search_places_page(api_key: str, keyword: str, business_type: str
                                radius: int, rate_limiter: APIRateLimiter, pagetoken: Optional[str] = None) -> Tuple[List[Dict], Optional[str], str]:
     url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
     params = {"key": api_key, "location": f"{latitude},{longitude}", "radius": radius}
-    if keyword: params["keyword"] = keyword
-    if business_type: params["type"] = business_type
+    
+    # Add keyword only if it's not empty
+    if keyword and keyword.strip(): 
+        params["keyword"] = keyword
+    
+    # Add business type only if it's not empty
+    if business_type and business_type.strip(): 
+        params["type"] = business_type
+    
     if pagetoken:
         params["pagetoken"] = pagetoken
         time.sleep(2)
@@ -586,7 +593,9 @@ class ScrapingManager:
             lat, lng = h3.h3_to_geo(h3_index)
             radius = get_search_radius_for_resolution(current_res)
             
-            print(f"    [{boundary['name']}] Q:{len(processing_queue)} Hex {processed_hex_count}: {h3_index} (Res {current_res})")
+            # Display appropriate search info
+            search_info = f"type: {self.business_type}" if self.business_type and not search_query.strip() else f"keyword: {search_query}"
+            print(f"    [{boundary['name']}] Q:{len(processing_queue)} Hex {processed_hex_count}: {h3_index} (Res {current_res}) - {search_info}")
             
             results, api_calls = get_all_place_ids_for_hex(
                 self.api_key, search_query, self.business_type, lat, lng, radius, self.rate_limiter
